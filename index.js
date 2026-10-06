@@ -10,12 +10,69 @@ const {
 const { createClient } = require('@supabase/supabase-js');
 
 // ========================================
+// CONFIGURAÇÕES DE AMBIENTE
+// ========================================
+
+const TOKEN =
+    process.env.TOKEN?.trim() ||
+    process.env.DISCORD_TOKEN?.trim();
+
+const SUPABASE_URL =
+    process.env.SUPABASE_URL?.trim();
+
+const SUPABASE_KEY =
+    process.env.SUPABASE_KEY?.trim();
+
+// ========================================
+// VERIFICAÇÃO DAS VARIÁVEIS
+// ========================================
+
+console.log('');
+console.log('========================================');
+console.log('🕵️ GHOSTS RECONHECIMENTO');
+console.log('========================================');
+
+console.log(
+    `🔑 TOKEN: ${TOKEN ? 'CONFIGURADO' : 'NÃO CONFIGURADO'}`
+);
+
+console.log(
+    `🗄️ SUPABASE_URL: ${SUPABASE_URL ? 'CONFIGURADO' : 'NÃO CONFIGURADO'}`
+);
+
+console.log(
+    `🗄️ SUPABASE_KEY: ${SUPABASE_KEY ? 'CONFIGURADO' : 'NÃO CONFIGURADO'}`
+);
+
+console.log('');
+
+// ========================================
+// PARAR CASO FALTE CONFIGURAÇÃO
+// ========================================
+
+if (!TOKEN) {
+    console.error('❌ TOKEN/DISCORD_TOKEN não configurado.');
+    console.error('❌ Configure TOKEN no Railway → Variables.');
+    process.exit(1);
+}
+
+if (!SUPABASE_URL) {
+    console.error('❌ SUPABASE_URL não configurado.');
+    process.exit(1);
+}
+
+if (!SUPABASE_KEY) {
+    console.error('❌ SUPABASE_KEY não configurado.');
+    process.exit(1);
+}
+
+// ========================================
 // SUPABASE
 // ========================================
 
 const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_KEY
+    SUPABASE_URL,
+    SUPABASE_KEY
 );
 
 // ========================================
@@ -57,7 +114,7 @@ const SERVIDORES = {
     },
 
     // ====================================
-    // EB
+    // EXÉRCITO BRASILEIRO
     // ====================================
 
     '1536103189651394650': {
@@ -79,20 +136,16 @@ const ANTI_RAID_PH_ID =
     '1555982826283999252';
 
 // ========================================
-// CONFIGURAÇÕES DA RAID
+// CONFIGURAÇÃO DA RAID
 // ========================================
 
-// Quantidade de entradas necessárias
-// para considerar uma possível raid.
 const LIMITE_ENTRADAS = 5;
 
-// Janela de análise:
-// 10 segundos.
-const TEMPO_RAID = 10 * 1000;
+const TEMPO_RAID =
+    10 * 1000;
 
-// Tempo até permitir detectar outra raid
-// no mesmo servidor.
-const TEMPO_RESET_RAID = 60 * 1000;
+const TEMPO_RESET_RAID =
+    60 * 1000;
 
 // ========================================
 // USUÁRIOS PROTEGIDOS
@@ -102,7 +155,7 @@ const PROTEGIDOS = [
     '1257650260453625969',
     '1383780986994819144',
     '1544455972905295985',
-    '1458626839383155884',
+    '1458626832520708197',
     '1466986389383155884'
 ];
 
@@ -110,14 +163,12 @@ const PROTEGIDOS = [
 // ARMAZENAMENTO
 // ========================================
 
-// Guarda horários de entrada por servidor.
 const entradas = new Map();
 
-// Evita alertas duplicados.
 const raidsDetectadas = new Set();
 
 // ========================================
-// PEGAR CONFIGURAÇÃO
+// CONFIGURAÇÃO DO SERVIDOR
 // ========================================
 
 function obterConfigServidor(guild) {
@@ -130,7 +181,7 @@ function obterConfigServidor(guild) {
 }
 
 // ========================================
-// PEGAR CANAL DE LOGS
+// CANAL DE LOGS
 // ========================================
 
 function obterCanalLogs(guild) {
@@ -149,8 +200,8 @@ function obterCanalLogs(guild) {
 
     if (!canal) {
 
-        console.log(
-            `❌ Canal de logs não encontrado em ${guild.name}`
+        console.error(
+            `❌ Canal de logs não encontrado: ${config.canalLogs}`
         );
 
         return null;
@@ -167,10 +218,11 @@ async function testarSupabase() {
 
     try {
 
-        const { error } = await supabase
-            .from('global_bans')
-            .select('id')
-            .limit(1);
+        const { error } =
+            await supabase
+                .from('global_bans')
+                .select('id')
+                .limit(1);
 
         if (error) {
 
@@ -183,7 +235,7 @@ async function testarSupabase() {
         }
 
         console.log(
-            '🗄️ Supabase conectado! global_bans acessível!'
+            '🗄️ Supabase conectado com sucesso!'
         );
 
         return true;
@@ -208,11 +260,14 @@ client.once(
     async () => {
 
         console.log('');
-        console.log('================================');
+        console.log('========================================');
         console.log(
-            `✅ ${client.user.tag} conectado!`
+            `✅ BOT ONLINE: ${client.user.tag}`
         );
-        console.log('================================');
+        console.log(
+            `🆔 ID DO BOT: ${client.user.id}`
+        );
+        console.log('========================================');
         console.log('');
 
         console.log(
@@ -220,6 +275,7 @@ client.once(
         );
 
         console.log('');
+
         console.log(
             '🏠 SERVIDORES MONITORADOS:'
         );
@@ -259,9 +315,7 @@ client.once(
                 console.log(
                     `❌ Servidor não encontrado: ${guildId}`
                 );
-
             }
-
         }
 
         console.log('');
@@ -278,6 +332,9 @@ client.once(
 
         await testarSupabase();
 
+        console.log('');
+        console.log('🚀 Sistema pronto!');
+        console.log('');
     }
 );
 
@@ -295,7 +352,7 @@ client.on(
                 member.guild;
 
             // ====================================
-            // IGNORAR SERVIDORES NÃO CONFIGURADOS
+            // IGNORAR SERVIDOR NÃO CONFIGURADO
             // ====================================
 
             if (
@@ -323,7 +380,7 @@ client.on(
             }
 
             // ====================================
-            // CRIAR LISTA DO SERVIDOR
+            // CRIAR LISTA
             // ====================================
 
             if (
@@ -365,11 +422,11 @@ client.on(
 
             console.log(
                 `👤 Nova entrada em ${guild.name}: ` +
-                `${recentes.length} nos últimos 10 segundos`
+                `${recentes.length}/${LIMITE_ENTRADAS} nos últimos 10 segundos`
             );
 
             // ====================================
-            // VERIFICAR RAID
+            // DETECTAR RAID
             // ====================================
 
             if (
@@ -377,7 +434,6 @@ client.on(
                 LIMITE_ENTRADAS
             ) {
 
-                // Já detectou recentemente?
                 if (
                     raidsDetectadas.has(
                         guild.id
@@ -387,7 +443,6 @@ client.on(
                     return;
                 }
 
-                // Marca como detectada
                 raidsDetectadas.add(
                     guild.id
                 );
@@ -398,7 +453,7 @@ client.on(
                 );
 
                 // =================================
-                // LIBERAR NOVA DETECÇÃO DEPOIS
+                // LIBERAR NOVA DETECÇÃO
                 // =================================
 
                 setTimeout(
@@ -415,7 +470,6 @@ client.on(
                     },
                     TEMPO_RESET_RAID
                 );
-
             }
 
         } catch (erro) {
@@ -424,9 +478,7 @@ client.on(
                 '❌ Erro ao processar entrada:',
                 erro.message
             );
-
         }
-
     }
 );
 
@@ -462,7 +514,7 @@ async function detectarRaid(
     );
 
     console.log(
-        `🛡️ Sistema responsável: ${config.antiRaid}`
+        `🛡️ Anti-Raid: ${config.antiRaid}`
     );
 
     console.log(
@@ -471,10 +523,6 @@ async function detectarRaid(
 
     console.log('');
 
-    // ====================================
-    // CANAL DE LOGS
-    // ====================================
-
     const canal =
         obterCanalLogs(
             guild
@@ -482,15 +530,15 @@ async function detectarRaid(
 
     if (!canal) {
 
-        console.log(
-            `❌ Canal de logs não encontrado para ${guild.name}`
+        console.error(
+            `❌ Canal de logs não encontrado em ${guild.name}`
         );
 
         return;
     }
 
     // ====================================
-    // ALERTA RAID DETECTOR
+    // MENSAGEM PARA ANTI-RAID
     // ====================================
 
     const mensagemDetector =
@@ -508,18 +556,23 @@ async function detectarRaid(
 
         `🔒 **Ação:** O sistema Anti-Raid deve ativar o LOCKDOWN.`;
 
-    await canal.send({
-        content: mensagemDetector
-    }).catch(
-        erro => {
+    try {
 
-            console.log(
-                '❌ Não consegui enviar alerta:',
-                erro.message
-            );
+        await canal.send({
+            content: mensagemDetector
+        });
 
-        }
-    );
+        console.log(
+            `📨 Alerta enviado para ${config.antiRaid}.`
+        );
+
+    } catch (erro) {
+
+        console.error(
+            '❌ Não consegui enviar alerta:',
+            erro.message
+        );
+    }
 
     // ====================================
     // EMBED
@@ -574,13 +627,19 @@ async function detectarRaid(
             )
             .setTimestamp();
 
-    await canal.send({
-        embeds: [
-            embed
-        ]
-    }).catch(
-        () => {}
-    );
+    try {
+
+        await canal.send({
+            embeds: [embed]
+        });
+
+    } catch (erro) {
+
+        console.error(
+            '❌ Erro ao enviar embed:',
+            erro.message
+        );
+    }
 
     // ====================================
     // AUDIT LOG
@@ -589,7 +648,6 @@ async function detectarRaid(
     await verificarAuditLog(
         guild
     );
-
 }
 
 // ========================================
@@ -623,33 +681,34 @@ async function registrarBanGlobal(
 
         const {
             error
-        } = await supabase
-            .from('global_bans')
-            .upsert(
-                {
-                    discord_user_id:
-                        executor.id,
+        } =
+            await supabase
+                .from('global_bans')
+                .upsert(
+                    {
+                        discord_user_id:
+                            executor.id,
 
-                    reason:
-                        motivo,
+                        reason:
+                            motivo,
 
-                    source_server_id:
-                        guild.id,
+                        source_server_id:
+                            guild.id,
 
-                    source_server_name:
-                        guild.name,
+                        source_server_name:
+                            guild.name,
 
-                    created_by:
-                        client.user.id,
+                        created_by:
+                            client.user.id,
 
-                    active:
-                        true
-                },
-                {
-                    onConflict:
-                        'discord_user_id'
-                }
-            );
+                        active:
+                            true
+                    },
+                    {
+                        onConflict:
+                            'discord_user_id'
+                    }
+                );
 
         if (error) {
 
@@ -694,9 +753,7 @@ async function registrarBanGlobal(
             '❌ Erro ao registrar ban global:',
             erro.message
         );
-
     }
-
 }
 
 // ========================================
@@ -713,6 +770,7 @@ async function verificarAuditLog(
             await guild.fetchAuditLogs({
                 type:
                     AuditLogEvent.BotAdd,
+
                 limit:
                     20
             });
@@ -765,12 +823,7 @@ async function verificarAuditLog(
                 continue;
             }
 
-            // =================================
-            // INVASOR
-            // =================================
-
             console.log('');
-
             console.log(
                 '🚨 POSSÍVEL INVASOR IDENTIFICADO'
             );
@@ -792,7 +845,7 @@ async function verificarAuditLog(
             );
 
             // =================================
-            // CANAL DE LOGS
+            // LOG
             // =================================
 
             const canal =
@@ -842,18 +895,23 @@ async function verificarAuditLog(
                         )
                         .setTimestamp();
 
-                await canal.send({
-                    embeds: [
-                        embed
-                    ]
-                }).catch(
-                    () => {}
-                );
+                try {
 
+                    await canal.send({
+                        embeds: [embed]
+                    });
+
+                } catch (erro) {
+
+                    console.error(
+                        '❌ Erro ao enviar log do invasor:',
+                        erro.message
+                    );
+                }
             }
 
             // =================================
-            // REGISTRAR GLOBALMENTE
+            // SUPABASE
             // =================================
 
             await registrarBanGlobal(
@@ -861,7 +919,6 @@ async function verificarAuditLog(
                 guild,
                 `Possível responsável por raid no servidor ${guild.name}`
             );
-
         }
 
     } catch (erro) {
@@ -870,46 +927,90 @@ async function verificarAuditLog(
             '❌ Erro ao consultar Audit Log:',
             erro.message
         );
-
     }
-
 }
 
 // ========================================
-// VERIFICAR CONFIGURAÇÕES
+// TRATAMENTO DE ERROS
 // ========================================
 
-if (!process.env.TOKEN) {
+client.on(
+    'error',
+    (erro) => {
 
-    console.error(
-        '❌ TOKEN não encontrado no arquivo .env'
-    );
+        console.error(
+            '❌ Erro do Discord:',
+            erro.message
+        );
+    }
+);
 
-    process.exit(1);
-}
+process.on(
+    'unhandledRejection',
+    (erro) => {
 
-if (!process.env.SUPABASE_URL) {
+        console.error(
+            '❌ Unhandled Rejection:',
+            erro
+        );
+    }
+);
 
-    console.error(
-        '❌ SUPABASE_URL não encontrado no arquivo .env'
-    );
+process.on(
+    'uncaughtException',
+    (erro) => {
 
-    process.exit(1);
-}
-
-if (!process.env.SUPABASE_KEY) {
-
-    console.error(
-        '❌ SUPABASE_KEY não encontrado no arquivo .env'
-    );
-
-    process.exit(1);
-}
+        console.error(
+            '❌ Uncaught Exception:',
+            erro
+        );
+    }
+);
 
 // ========================================
 // LOGIN
 // ========================================
 
-client.login(
-    process.env.TOKEN
+console.log(
+    '🔄 Conectando ao Discord...'
 );
+
+client.login(TOKEN)
+    .then(() => {
+
+        console.log(
+            '🔐 Login do Discord iniciado.'
+        );
+
+    })
+    .catch((erro) => {
+
+        console.error('');
+        console.error(
+            '❌ NÃO FOI POSSÍVEL CONECTAR AO DISCORD.'
+        );
+
+        console.error(
+            `❌ Código: ${erro.code || 'desconhecido'}`
+        );
+
+        console.error(
+            `❌ Erro: ${erro.message}`
+        );
+
+        if (
+            erro.code === 'TokenInvalid'
+        ) {
+
+            console.error('');
+            console.error(
+                '⚠️ O TOKEN CONFIGURADO NO RAILWAY É INVÁLIDO.'
+            );
+
+            console.error(
+                '⚠️ Verifique Railway → Variables → TOKEN.'
+            );
+        }
+
+        console.error('');
+    });
